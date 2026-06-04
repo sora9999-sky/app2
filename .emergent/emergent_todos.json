@@ -1,42 +1,26 @@
 [
   {
-    "content": "Phase 2: Install dependencies",
+    "content": "Phase 5: Add search to Suppliers page",
     "status": "completed"
   },
   {
-    "content": "Phase 2: Build storage abstraction + i18n + utils + AppContext",
+    "content": "Phase 5: Add filter-by-type to Expenses page",
     "status": "completed"
   },
   {
-    "content": "Phase 2: Build Safe screen",
+    "content": "Phase 5: Add partial payment option when adding a bill",
     "status": "completed"
   },
   {
-    "content": "Phase 2: Build Supplier Accounts list + detail (with PDF export)",
+    "content": "Phase 5: Improve payment modal with remaining amount + 'Pay remaining' quick fill",
     "status": "completed"
   },
   {
-    "content": "Phase 2: Build Notifications screen + engine",
+    "content": "Phase 5: Run Electron locally to verify packaged build boots (266MB→5.9MB optimized)",
     "status": "completed"
   },
   {
-    "content": "Phase 2: Build Expenses screen",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Build Settings (backup/restore) + Layout shell",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 3: Add Electron wrapper (main.js, preload.js) + JSON disk storage",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 3: GitHub Actions workflow for Windows EXE build + README + icons",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 4: End-to-end testing with testing_agent_v3 (95% pass, notifications timing edge case fixed)",
-    "status": "completed"
+    "content": "Phase 5: Run testing_agent_v3 for new features",
+    "status": "in_progress"
   }
 ]

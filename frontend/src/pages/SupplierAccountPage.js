@@ -59,6 +59,7 @@ export default function SupplierAccountPage() {
   const [billAmount, setBillAmount] = useState('');
   const [billDate, setBillDate] = useState(todayISO());
   const [billMonths, setBillMonths] = useState('3');
+  const [billInitialPayment, setBillInitialPayment] = useState('');
 
   // Payment form
   const [payNumber, setPayNumber] = useState('');
@@ -107,16 +108,41 @@ export default function SupplierAccountPage() {
       showToast(tr('suppliers.enterValidAmount'), 'error');
       return;
     }
-    addBill(account.id, {
+    const initial = Number(billInitialPayment) || 0;
+    if (initial < 0) {
+      showToast(tr('suppliers.enterValidAmount'), 'error');
+      return;
+    }
+    if (initial > a) {
+      showToast(tr('suppliers.amountExceedsRemaining'), 'error');
+      return;
+    }
+    if (initial > 0) {
+      const currentBalance = safeBalance(state);
+      if (initial > currentBalance) {
+        showToast(tr('suppliers.insufficientFunds'), 'error');
+        return;
+      }
+    }
+    const newBillId = addBill(account.id, {
       billNumber,
       amount: a,
       date: billDate,
       monthsUntilDue: billMonths,
     });
+    if (initial > 0 && newBillId) {
+      addPayment(account.id, {
+        paymentNumber: `${billNumber}-INIT`,
+        amount: initial,
+        date: billDate,
+        billId: newBillId,
+      });
+    }
     setBillNumber('');
     setBillAmount('');
     setBillDate(todayISO());
     setBillMonths('3');
+    setBillInitialPayment('');
     setBillOpen(false);
     showToast(tr('common.save') + ' ✓', 'success');
   };
@@ -128,11 +154,22 @@ export default function SupplierAccountPage() {
       showToast(tr('suppliers.enterValidAmount'), 'error');
       return;
     }
-    // Check safe balance - we use current state (synchronous-ish since payments deduct from safe)
+    // Check safe balance
     const currentBalance = safeBalance(state);
     if (a > currentBalance) {
       showToast(tr('suppliers.insufficientFunds'), 'error');
       return;
+    }
+    // If a bill is selected, ensure we don't overpay
+    if (payBillId) {
+      const bill = (account.bills || []).find((b) => b.id === Number(payBillId));
+      if (bill) {
+        const st = billStatus(bill, account);
+        if (a > st.remaining + 0.0001) {
+          showToast(tr('suppliers.amountExceedsRemaining'), 'error');
+          return;
+        }
+      }
     }
     addPayment(account.id, {
       paymentNumber: payNumber,
@@ -460,11 +497,52 @@ export default function SupplierAccountPage() {
             />
           </Field>
           {billDate && billMonths !== '' && (
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-slate-500 mb-3">
               {tr('suppliers.dueDate')}:{' '}
               <span className="font-semibold text-sky-700">
                 {formatDate(addMonths(billDate, Number(billMonths)), lang)}
               </span>
+            </div>
+          )}
+          <Field label={tr('suppliers.initialPayment')}>
+            <Input
+              type="number"
+              min="0"
+              step="any"
+              value={billInitialPayment}
+              onChange={(e) => setBillInitialPayment(e.target.value)}
+              data-testid="bill-initial-payment"
+              placeholder="0"
+            />
+          </Field>
+          <div className="text-xs text-slate-500 -mt-2 mb-2 leading-relaxed">
+            {tr('suppliers.initialPaymentHelp')}
+          </div>
+          {Number(billInitialPayment) > 0 && billAmount && (
+            <div className="text-xs bg-sky-50 border border-sky-100 rounded-lg px-3 py-2 mt-1">
+              <div className="flex justify-between">
+                <span className="text-slate-600">
+                  {tr('suppliers.remainingOnBill')}:
+                </span>
+                <span className="font-semibold text-sky-700">
+                  {formatIQD(
+                    Math.max(0, Number(billAmount) - Number(billInitialPayment)),
+                    lang
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-slate-600">{tr('safe.balance')}:</span>
+                <span
+                  className={`font-semibold ${
+                    Number(billInitialPayment) > safeBalance(state)
+                      ? 'text-rose-600'
+                      : 'text-emerald-600'
+                  }`}
+                >
+                  {formatIQD(safeBalance(state), lang)}
+                </span>
+              </div>
             </div>
           )}
         </form>
@@ -525,14 +603,48 @@ export default function SupplierAccountPage() {
               data-testid="payment-bill"
             >
               <option value="">{tr('suppliers.pickBill')}</option>
-              {bills.map((b) => (
-                <option key={b.id} value={b.id}>
-                  B-{String(b.id).padStart(4, '0')} · #{b.billNumber} ·{' '}
-                  {formatIQD(b.amount, lang)}
-                </option>
-              ))}
+              {bills.map((b) => {
+                const st = billStatus(b, account);
+                return (
+                  <option key={b.id} value={b.id}>
+                    B-{String(b.id).padStart(4, '0')} · #{b.billNumber} ·{' '}
+                    {tr('suppliers.remainingOnBill')}: {formatIQD(st.remaining, lang)}
+                  </option>
+                );
+              })}
             </Select>
           </Field>
+          {payBillId &&
+            (() => {
+              const bill = bills.find((b) => b.id === Number(payBillId));
+              if (!bill) return null;
+              const st = billStatus(bill, account);
+              return (
+                <div
+                  className="text-xs bg-teal-50 border border-teal-100 rounded-lg px-3 py-2 mb-3"
+                  data-testid="payment-remaining-info"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600">
+                      {tr('suppliers.remainingOnBill')}:
+                    </span>
+                    <span className="font-bold text-teal-700">
+                      {formatIQD(st.remaining, lang)}
+                    </span>
+                  </div>
+                  {st.remaining > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setPayAmount(String(st.remaining))}
+                      data-testid="pay-remaining-btn"
+                      className="mt-2 w-full px-3 py-1.5 rounded-md bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold"
+                    >
+                      {tr('suppliers.payRemaining')} ({formatIQD(st.remaining, lang)})
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           <div className="text-xs text-slate-500 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
             ⚠️ {tr('safe.balance')}: {formatIQD(safeBalance(state), lang)}
           </div>

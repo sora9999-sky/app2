@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Receipt, Tag, History } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Trash2, Receipt, Tag, History, Filter } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -33,6 +33,7 @@ export default function ExpensesPage() {
   const entries = state.expenses.entries || [];
   const total = totalExpenses(state);
 
+  const [filterTypeId, setFilterTypeId] = useState('all');
   const [typeOpen, setTypeOpen] = useState(false);
   const [expOpen, setExpOpen] = useState(false);
   const [typeName, setTypeName] = useState('');
@@ -44,6 +45,18 @@ export default function ExpensesPage() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmDel, setConfirmDel] = useState(null);
   const [confirmDelType, setConfirmDelType] = useState(null);
+
+  const filteredEntries = useMemo(() => {
+    if (filterTypeId === 'all') return entries;
+    if (filterTypeId === 'unknown')
+      return entries.filter((e) => !types.find((t) => t.id === Number(e.typeId)));
+    return entries.filter((e) => Number(e.typeId) === Number(filterTypeId));
+  }, [entries, types, filterTypeId]);
+
+  const filteredTotal = useMemo(
+    () => filteredEntries.reduce((s, e) => s + Number(e.amount || 0), 0),
+    [filteredEntries]
+  );
 
   const submitType = (e) => {
     e?.preventDefault();
@@ -144,27 +157,59 @@ export default function ExpensesPage() {
 
       {/* History */}
       <Card className="overflow-hidden">
-        <div className="px-6 py-4 border-b border-sky-100 flex items-center justify-between bg-gradient-to-r from-sky-50 to-white">
+        <div className="px-6 py-4 border-b border-sky-100 flex items-center justify-between gap-3 flex-wrap bg-gradient-to-r from-sky-50 to-white">
           <div className="flex items-center gap-2 font-semibold text-slate-800">
             <History size={18} className="text-sky-500" />
             {tr('expenses.history')}
           </div>
-          {entries.length > 0 && (
-            <GhostButton
-              onClick={() => setConfirmClear(true)}
-              data-testid="clear-expenses-btn"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Trash2 size={14} /> {tr('common.clear')}
-              </span>
-            </GhostButton>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter size={14} className="text-slate-400" />
+              <select
+                value={filterTypeId}
+                onChange={(e) => setFilterTypeId(e.target.value)}
+                data-testid="expense-filter-type"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 outline-none"
+              >
+                <option value="all">{tr('expenses.allTypes')}</option>
+                {types.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+                <option value="unknown">— —</option>
+              </select>
+            </div>
+            {entries.length > 0 && (
+              <GhostButton
+                onClick={() => setConfirmClear(true)}
+                data-testid="clear-expenses-btn"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Trash2 size={14} /> {tr('common.clear')}
+                </span>
+              </GhostButton>
+            )}
+          </div>
         </div>
+
+        {filterTypeId !== 'all' && filteredEntries.length > 0 && (
+          <div
+            className="px-6 py-2.5 bg-sky-50 border-b border-sky-100 text-sm text-sky-800 flex justify-between"
+            data-testid="expense-filtered-total"
+          >
+            <span className="font-medium">{tr('expenses.filteredTotal')}</span>
+            <span className="font-bold">{formatIQD(filteredTotal, lang)}</span>
+          </div>
+        )}
+
         {entries.length === 0 ? (
           <EmptyState icon={Receipt} title={tr('common.empty')} />
+        ) : filteredEntries.length === 0 ? (
+          <EmptyState icon={Filter} title={tr('expenses.noMatches')} />
         ) : (
           <ul className="divide-y divide-sky-50">
-            {entries.map((e) => (
+            {filteredEntries.map((e) => (
               <li
                 key={e.id}
                 data-testid={`expense-row-${e.id}`}
