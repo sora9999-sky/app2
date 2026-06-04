@@ -54,7 +54,7 @@ jobs:
         with:
           name: DinarDesk-Windows-Installer
           path: |
-            frontend/dist/*.exe
+            frontend/dist/DinarDesk-Setup-*.exe
             frontend/dist/*.exe.blockmap
             frontend/dist/latest.yml
           if-no-files-found: error
@@ -65,5 +65,5 @@ jobs:
         with:
           name: DinarDesk-Portable
           path: frontend/dist/DinarDesk-Portable-*.exe
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 90

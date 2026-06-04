@@ -29,8 +29,7 @@
         "target": "portable",
         "arch": ["x64"]
       }
-    ],
-    "artifactName": "DinarDesk-${version}-${arch}-${target}.${ext}"
+    ]
   },
   "nsis": {
     "oneClick": false,
@@ -38,7 +37,8 @@
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "Dinar Desk"
+    "shortcutName": "Dinar Desk",
+    "artifactName": "DinarDesk-Setup-${version}.${ext}"
   },
   "portable": {
     "artifactName": "DinarDesk-Portable-${version}.${ext}"
