@@ -44,6 +44,7 @@
     "artifactName": "DinarDesk-Portable-${version}.${ext}"
   },
   "asar": true,
+  "publish": null,
   "extraMetadata": {
     "main": "electron/main.js"
   }

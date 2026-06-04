@@ -55,8 +55,7 @@ jobs:
           name: DinarDesk-Windows-Installer
           path: |
             frontend/dist/DinarDesk-Setup-*.exe
-            frontend/dist/*.exe.blockmap
-            frontend/dist/latest.yml
+            frontend/dist/DinarDesk-Setup-*.exe.blockmap
           if-no-files-found: error
           retention-days: 90
 
