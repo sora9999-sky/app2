@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json.schemastore.org/electron-builder.json",
+  "appId": "com.dinardesk.app",
+  "productName": "Dinar Desk",
+  "copyright": "Copyright © 2025 Dinar Desk",
+  "directories": {
+    "output": "dist",
+    "buildResources": "electron"
+  },
+  "files": [
+    "build/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "win": {
+    "icon": "electron/icon.ico",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "artifactName": "DinarDesk-${version}-${arch}-${target}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Dinar Desk"
+  },
+  "portable": {
+    "artifactName": "DinarDesk-Portable-${version}.${ext}"
+  },
+  "asar": true,
+  "extraMetadata": {
+    "main": "electron/main.js"
+  }
+}
