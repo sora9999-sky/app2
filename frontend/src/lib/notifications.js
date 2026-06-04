@@ -10,6 +10,16 @@ function startOfDay(d) {
   return x;
 }
 
+// Parse 'YYYY-MM-DD' string as local-midnight Date (avoid UTC parsing shift).
+function parseLocalDate(s) {
+  if (!s) return null;
+  if (typeof s === 'string' && /^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const [y, m, d] = s.slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0, 0);
+  }
+  return startOfDay(s);
+}
+
 export function computeNotifications(state, now = new Date()) {
   const today = startOfDay(now);
   const out = [];
@@ -29,7 +39,8 @@ export function computeNotifications(state, now = new Date()) {
       const remaining = Number(bill.amount || 0) - paid;
       if (remaining <= 0) continue; // paid in full
 
-      const due = startOfDay(bill.dueDate);
+      const due = parseLocalDate(bill.dueDate);
+      if (!due) continue;
       const daysLeft = Math.round(
         (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
       );
